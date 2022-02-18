@@ -1,0 +1,23 @@
+fullnameOverride: is-clickhouse
+nameOverride: clickhouse
+clickhouse:
+  image: "dev.iscr.io/yandex/clickhouse-server"
+  imageVersion: "20"
+  replicas: 1
+  configmap:
+    enabled: true
+    remote_servers:
+      enabled: true
+      replica:
+        backup:
+          enabled: false
+  persistentVolumeClaim:
+    enabled: true
+    dataPersistentVolume:
+      enabled: true
+      accessModes:
+        - "ReadWriteOnce"
+      storageClassName: "standard"
+      storage: "1Gi"
+tabix:
+  enabled: false
