@@ -1,0 +1,5 @@
+#### Install the clickhouse in ideascale namespace of a running kubernetes cluster
+helm upgrade --install -f myvalues.yaml is-clickhouse --namespace=ideascale open-8gears/clickhouse --version 1.0.2
+
+#### For connecting from outside the cluster
+kubectl port-forward --namespace ideascale svc/is-clickhouse 30123:8123 --address 0.0.0.0
