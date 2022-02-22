@@ -20,7 +20,7 @@ persistentVolumeClaim:
   storageAnnotations:
     ideascale.com/storage: shared
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   storageSize: 5Gi
   storageClassName: standard
 
