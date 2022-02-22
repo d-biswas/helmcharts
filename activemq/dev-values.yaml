@@ -1,0 +1,6 @@
+fullnameOverride: isactivemq
+nameOverride: activemq
+imagePullSecrets:
+  - name: regcred
+image:
+  tag: dev
