@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "activemq.fullname" . }}
+  labels:
+    {{- include "activemq.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "activemq.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "activemq.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: activemq-volume
+          persistentVolumeClaim:
+            claimName: {{ include "activemq.pvcName" . }}
+      containers:
+        - name: {{ include "activemq.fullname" . }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          env:
+            - name: TZ
+              value: America/Los_Angeles
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: activemq
+              containerPort: {{ .Values.activemq.tcp_port | default "61616" }}
+          {{- if .Values.activemq.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.activemq.tcp_port }}
+            initialDelaySeconds: {{ .Values.activemq.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.activemq.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.activemq.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.activemq.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.activemq.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.activemq.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.activemq.tcp_port }}
+            initialDelaySeconds: {{ .Values.activemq.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.activemq.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.activemq.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.activemq.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.activemq.readinessProbe.successThreshold }}
+          {{- end }}
+          volumeMounts:
+            - name: activemq-volume
+              mountPath: {{ include "activemq.fullpath" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
