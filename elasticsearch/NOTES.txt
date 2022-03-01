@@ -1,0 +1,2 @@
+#### Install the elasticsearch in ideascale namespace of a running kubernetes cluster
+helm upgrade --install iselasticsearch --namespace=ideascale -f dev-values.yaml --version 6.8.22 elastic/elasticsearch
