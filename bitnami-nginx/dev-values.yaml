@@ -1,0 +1,50 @@
+nameOverride: "isnginx"
+fullnameOverride: "isnginx"
+image:
+  registry: dev.iscr.io
+  repository: ideascale/nginx
+  tag: 1.0.0-32_dev
+  pullPolicy: IfNotPresent
+  pullSecrets:
+    - regcred
+service:
+  type: ClusterIP
+  targetPort:
+    http: 80
+    https: 443
+
+containerPorts:
+  http: 80
+  https: 443
+
+extraEnvVars:
+  - name: TZ
+    value: America/Los_Angeles
+  - name: APP_DOMAIN
+    valueFrom:
+      configMapKeyRef:
+        key: APP_DOMAIN
+        name: instance-config
+
+extraVolumeMounts:
+  - mountPath: /web
+    name: web-volume
+
+initContainers:
+  - image: dev.iscr.io/ideascale/init-volume:dev
+    imagePullPolicy: Always
+    name: init-volume
+    volumeMounts:
+      - mountPath: /web
+        name: web-volume
+
+extraVolumes:
+  - name: web-volume
+    persistentVolumeClaim:
+      claimName: web-pvc
+
+ingress:
+  enabled: true
+  pathType: Prefix
+  hostname: "*.ideascale.me"
+  certManager: false

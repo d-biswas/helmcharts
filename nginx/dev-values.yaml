@@ -1,0 +1,67 @@
+nameOverride: "isnginx"
+fullnameOverride: "isnginx"
+
+imagePullSecret:
+  enabled: true
+  name: "regcred"
+
+image:
+  registry: "dev.iscr.io"
+  repository: "ideascale/nginx"
+  pullPolicy: IfNotPresent
+  tag: "dev"
+
+initContainers:
+  - name: init-volume
+    image: dev.iscr.io/ideascale/init-volume:dev
+    imagePullPolicy: Always
+    volumeMounts:
+    - mountPath: /web
+      name: web-volume
+envVar:
+  appDomainName: "ideascale.me"
+
+ingress:
+  extraHosts:
+    - host: "*.ideascale.me"
+      paths:
+        - path: /local-ip
+          pathType: Prefix
+          serviceName: local-ip
+          servicePort: 5201
+    - host: "*.ideascale.me"
+      paths:
+        - path: /local-m
+          pathType: Prefix
+          serviceName: local-m
+          servicePort: 5202
+    - host: "*.ideascale.me"
+      paths:
+        - path: /local-mm
+          pathType: Prefix
+          serviceName: local-mm
+          servicePort: 5203
+    - host: "*.ideascale.me"
+      paths:
+        - path: /local-c
+          pathType: Prefix
+          serviceName: local-c
+          servicePort: 5204
+    - host: "custom.ideas.li"
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: isnginx
+          servicePort: 443
+  tls:
+    - secretName: nginx-tls
+      hosts:
+        - "ideascale.me"
+        - "*.ideascale.me"
+
+volume:
+  volumeName: web-volume
+  mountPath: /web
+  claimName: web-pvc
+
+

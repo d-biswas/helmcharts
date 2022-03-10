@@ -1,0 +1,148 @@
+---
+# Source: nginx/templates/server-block-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: isnginx-server-block
+  labels:
+    app.kubernetes.io/name: isnginx
+    helm.sh/chart: nginx-9.9.3
+    app.kubernetes.io/instance: isnginx
+    app.kubernetes.io/managed-by: Helm
+data:
+  server-blocks-paths.conf: |-
+    include  "/opt/bitnami/nginx/conf/server_blocks/ldap/*.conf";
+    include  "/opt/bitnami/nginx/conf/server_blocks/common/*.conf";
+---
+# Source: nginx/templates/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: isnginx
+  labels:
+    app.kubernetes.io/name: isnginx
+    helm.sh/chart: nginx-9.9.3
+    app.kubernetes.io/instance: isnginx
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443
+  selector:
+    app.kubernetes.io/name: isnginx
+    app.kubernetes.io/instance: isnginx
+---
+# Source: nginx/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: isnginx
+  labels:
+    app.kubernetes.io/name: isnginx
+    helm.sh/chart: nginx-9.9.3
+    app.kubernetes.io/instance: isnginx
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate: {}
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: isnginx
+      app.kubernetes.io/instance: isnginx
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: isnginx
+        helm.sh/chart: nginx-9.9.3
+        app.kubernetes.io/instance: isnginx
+        app.kubernetes.io/managed-by: Helm
+    spec:
+
+      imagePullSecrets:
+        - name: regcred
+      automountServiceAccountToken: false
+      shareProcessNamespace: false
+      serviceAccountName: default
+      affinity:
+        podAffinity:
+
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: isnginx
+                    app.kubernetes.io/instance: isnginx
+                namespaces:
+                  - "default"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+
+      hostNetwork: false
+      hostIPC: false
+      initContainers:
+        - image: dev.iscr.io/ideascale/init-volume:dev
+          imagePullPolicy: Always
+          name: init-volume
+          volumeMounts:
+            - mountPath: /web
+              name: web-volume
+      containers:
+        - name: nginx
+          image: dev.iscr.io/ideascale/nginx:1.0.0-32_dev
+          imagePullPolicy: "IfNotPresent"
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: TZ
+              value: America/Los_Angeles
+            - name: APP_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  key: APP_DOMAIN
+                  name: instance-config
+          ports:
+            - name: http
+              containerPort: 80
+            - name: https
+              containerPort: 443
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+            - mountPath: /web
+              name: web-volume
+      volumes:
+        - name: nginx-server-block-paths
+          configMap:
+            name: isnginx-server-block
+            items:
+              - key: server-blocks-paths.conf
+                path: server-blocks-paths.conf
+        - name: web-volume
+          persistentVolumeClaim:
+            claimName: web-pvc
+

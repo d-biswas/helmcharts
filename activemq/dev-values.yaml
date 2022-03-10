@@ -1,6 +1,14 @@
 fullnameOverride: isactivemq
-nameOverride: activemq
+nameOverride: isactivemq
 imagePullSecrets:
   - name: regcred
 image:
   tag: dev
+persistentVolumeClaim:
+  name: activemq-pvc
+  storageAnnotations:
+    ideascale.com/storage: shared
+  accessModes:
+    - ReadWriteOnce
+  storageSize: 1Gi
+  storageClassName: ""

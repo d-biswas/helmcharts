@@ -1,6 +1,8 @@
 fullnameOverride: is-clickhouse
 nameOverride: clickhouse
 clickhouse:
+  imagePullSecrets:
+    - regcred
   image: "dev.iscr.io/yandex/clickhouse-server"
   imageVersion: "20"
   replicas: 1
@@ -17,7 +19,7 @@ clickhouse:
       enabled: true
       accessModes:
         - "ReadWriteOnce"
-      storageClassName: "standard"
+      storageClassName: ""
       storage: "1Gi"
 tabix:
   enabled: false

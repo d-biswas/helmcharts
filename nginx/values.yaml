@@ -1,0 +1,76 @@
+# Default values for nginx.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  registry: dev.iscr.io
+  repository: ideascale/nginx
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecret:
+  enabled: false
+  name: ""
+
+initContainers: []
+
+envVar:
+  appDomainName: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  https:
+    enabled: true;
+    port: 443
+
+  targetPorts:
+    http: 80
+    https: 443
+
+## NGINX containers' readiness probe.
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  timeoutSeconds: 5
+  periodSeconds: 10
+  failureThreshold: 6
+  successThreshold: 1
+## NGINX containers' readiness probe.
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  timeoutSeconds: 3
+  periodSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+ingress:
+  enabled: true
+  className: ""
+  host:
+    name: "*.ideascale.me"
+    path: /
+    pathType: Prefix
+    serviceName: app
+    servicePort: 21084
+  extraHosts: []
+
+  tls: []
+
+volume:
+  volumeName: web-volume
+  mountPath: /web
+  claimName: web-pvc
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+
+
