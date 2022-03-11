@@ -1,0 +1,51 @@
+# Default values for sso.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  registry: dev.iscr.io
+  repository: ideascale/issso
+  pullPolicy: IfNotPresent
+  tag: 1.0.0-7_dev
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+ingress:
+  enabled: true
+  hosts:
+    - host: "sso-saml-dev.ideas.li"
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: issso
+          servicePort: 80
+    - host: "sso-multipass-dev.ideas.li"
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: issso
+          servicePort: 80
+  tls:
+    - secretName: sso-tls
+      hosts:
+        - "sso-saml-dev.ideas.li"
+        - "sso-multipass-dev.ideas.li"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+
+imagePullSecret:
+  enabled: false
+  name: ""
+
+configMapName: instance-config
+

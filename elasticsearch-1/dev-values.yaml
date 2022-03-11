@@ -1,0 +1,66 @@
+#Define name
+fullnameOverride: iselasticsearch
+nameOverride: iselasticsearch
+
+#Defining service type NodePort as we want access from outside the cluster
+service:
+  type: NodePort
+  nodePort: 30200
+
+# Define A PersistentVolumeClaim with access mode `ReadWriteOnce`
+volumeClaimTemplate:
+  accessModes: [ "ReadWriteOnce" ]
+#  storageClassName: "microk8s-hostpath"
+  resources:
+    requests:
+      storage: 1Gi
+
+# We are not using PodDisruptionBudget.
+maxUnavailable: ""
+
+# If you are running a single replica cluster, status will never go green. So define the value for wait_for_status=yellow
+replicas: 1
+minimumMasterNodes: 1
+clusterHealthCheckParams: 'wait_for_status=yellow&timeout=1s'
+
+# Allocate chunks of memory per pod.
+resources:
+  requests:
+    cpu: "1000m"
+    memory: "500M"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+
+#Define where we are pulling the image from and pull policy
+image: "dev.iscr.io/elasticsearch"
+imageTag: "6.8.2"
+imagePullPolicy: "IfNotPresent"
+imagePullSecrets:
+  - name: regcred
+
+#Set the JVM heap size
+esJavaOpts: "-Xms512m -Xmx512m"
+
+tests:
+  enabled: false
+antiAffinity: "soft"
+securityContext: {}
+
+esMajorVersion: "6"
+
+# Copying elasticsearch data
+extraInitContainers:
+  - name: elasticsearch-data
+    command:
+      - sh
+      - -c
+      - if [ -z "$(ls -A /usr/share/elasticsearch/data/)" ]; then tar zxvf /initialized-es/*.tar.gz
+        -C /usr/share/elasticsearch/data/ && chown -R 1000:0 /usr/share/elasticsearch/data/*;
+        fi
+    image: dev.iscr.io/ideascale/elasticsearchdata:dev
+    imagePullPolicy: Always
+    volumeMounts:
+      - mountPath: /usr/share/elasticsearch/data
+        name: iselasticsearch
+

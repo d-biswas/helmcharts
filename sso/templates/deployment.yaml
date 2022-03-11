@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sso.fullname" . }}
+  labels:
+    {{- include "sso.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "sso.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sso.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.imagePullSecret.enabled }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret.name }}
+      {{- end }}
+      containers:
+        - name: {{ include "sso.fullname" . }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: TZ
+              value: America/Los_Angeles
+            - name: SSO_DOMAIN_SUFFIX
+              valueFrom:
+                configMapKeyRef:
+                  key: SSO_DOMAIN
+                  name: {{ .Values.configMapName }}
+            - name: APP_DOMAIN_SUFFIX
+              valueFrom:
+                configMapKeyRef:
+                  key: APP_DOMAIN
+                  name:  {{ .Values.configMapName }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
